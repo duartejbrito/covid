@@ -1,14 +1,17 @@
 import { IRegistry } from './iregistry.interface';
-import { Component, ViewChild } from '@angular/core';
+import { Component, ViewChild, OnInit } from '@angular/core';
 import { EcdcService } from './ecdc.service';
 import { mergeMap, toArray, groupBy, map, filter, max, min, distinct, concatMap, tap, count, take } from 'rxjs/operators';
 import { of, from, Observable } from 'rxjs';
 
-import { ChartDataSets, ChartOptions } from 'chart.js';
+import { ChartDataSets, ChartOptions, ChartPoint } from 'chart.js';
 import { Color, BaseChartDirective, Label } from 'ng2-charts';
 
 import { sortByKeys } from './sort-by-keys';
 import * as moment from 'moment';
+import { MatPaginator } from '@angular/material/paginator';
+import { MatTableDataSource } from '@angular/material/table';
+import { MatSort } from '@angular/material/sort';
 
 export const sortKeys = <T>(...keys: string[]) => (source: Observable<T[]>): Observable<T[]> => new Observable(observer => {
     return source.subscribe({
@@ -27,12 +30,19 @@ export const sortKeys = <T>(...keys: string[]) => (source: Observable<T[]>): Obs
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.css']
 })
-export class AppComponent {
+export class AppComponent implements OnInit {
 
   loaded = false;
 
   rawData: Array<IRegistry> = [];
   top: Array<string> = [];
+
+  displayedColumns: string[] = ['location', 'newCases', 'newDeaths', 'totalCases', 'totalDeaths', 'population', 'totalCasesByPopulation'];
+  maxDate: moment.Moment;
+  dataForTable: MatTableDataSource<IRegistry>;
+
+  @ViewChild(MatPaginator, {static: true}) paginator: MatPaginator;
+  @ViewChild(MatSort, {static: true}) sort: MatSort;
 
   public lineChartData: ChartDataSets[] = [];
   public lineChartLabels: moment.Moment[] = [];
@@ -73,7 +83,7 @@ export class AppComponent {
         label: (item, data) => {
           const dataSet = data.datasets[item.datasetIndex];
           const dataItem = dataSet.data[item.index];
-          const dataItemRounded = Math.round((Number(dataItem) + Number.EPSILON) * 100) / 100;
+          const dataItemRounded = this.roundValue(dataItem);
           return `${dataSet.label}: ${dataItemRounded}%`;
         }
       }
@@ -83,6 +93,22 @@ export class AppComponent {
   constructor(ecdcService: EcdcService) {
     ecdcService.get().subscribe(result => {
       this.rawData = result;
+
+      from(result)
+        .pipe(
+          map(x => x.date),
+          max()
+        ).subscribe(maxDate => this.maxDate = maxDate);
+
+      from(result)
+          .pipe(
+            filter(x => x.location.toLowerCase() !== 'world' && x.date.isSame(this.maxDate)),
+            toArray()
+          ).subscribe(dataForTable => {
+            this.dataForTable = new MatTableDataSource<IRegistry>(dataForTable);
+            this.dataForTable.paginator = this.paginator;
+            this.dataForTable.sort = this.sort;
+          });
 
       const sortedDataTotal = sortByKeys(result, '-date', '-totalCases');
 
@@ -126,6 +152,9 @@ export class AppComponent {
     });
   }
 
+  ngOnInit() {
+  }
+
   mapLineChart(registries: Array<IRegistry>): Array<number> {
     const lineValues: Array<number> = [];
     this.lineChartLabels.forEach(date => {
@@ -137,5 +166,14 @@ export class AppComponent {
       lineValues.push(Number(value));
     });
     return lineValues;
+  }
+
+  roundValue(value: number | ChartPoint) {
+    return Math.round((Number(value) + Number.EPSILON) * 100) / 100;
+  }
+
+  applyFilter(event: Event) {
+    const filterValue = (event.target as HTMLInputElement).value;
+    this.dataForTable.filter = filterValue.trim().toLowerCase();
   }
 }
