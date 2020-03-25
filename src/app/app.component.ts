@@ -8,6 +8,7 @@ import { ChartDataSets, ChartOptions } from 'chart.js';
 import { Color, BaseChartDirective, Label } from 'ng2-charts';
 
 import { sortByKeys } from './sort-by-keys';
+import * as moment from 'moment';
 
 export const sortKeys = <T>(...keys: string[]) => (source: Observable<T[]>): Observable<T[]> => new Observable(observer => {
     return source.subscribe({
@@ -34,24 +35,40 @@ export class AppComponent {
   top: Array<string> = [];
 
   public lineChartData: ChartDataSets[] = [];
-  public lineChartLabels: Label[] = [];
+  public lineChartLabels: moment.Moment[] = [];
   public lineChartOptions: ChartOptions = {
     responsive: true,
+    legend: {
+      position: 'right',
+      align: 'center'
+    },
     scales: {
-      xAxes: [{ }],
-      yAxes: [
-        {
-          id: 'y-axis-0',
-          position: 'left',
+      xAxes: [{
+        type: 'time',
+        time: {
+          unit: 'day',
+          unitStepSize: 5,
+          displayFormats: {
+            day: 'MMM DD'
+          }
+        },
+      }],
+      yAxes: [{
+        ticks: {
+          min: 0,
+          callback: value => `${value}%`,
+        },
+        scaleLabel: {
+          display: true,
+          labelString: 'Percentage by Population'
         }
-      ]
+      }]
     }
   };
 
   constructor(ecdcService: EcdcService) {
     ecdcService.get().subscribe(result => {
       this.rawData = result;
-      console.log(result)
 
       const sortedDataTotal = sortByKeys(result, '-date', '-totalCases');
 
@@ -68,8 +85,8 @@ export class AppComponent {
 
       from(sortedDataDate)
         .pipe(
-          map(x => x.date as unknown as string),
-          distinct(),
+          map(x => x.date),
+          distinct(x => x.format()),
           toArray(),
         ).subscribe(dates => this.lineChartLabels = dates);
 
@@ -98,10 +115,10 @@ export class AppComponent {
   mapLineChart(registries: Array<IRegistry>): Array<number> {
     const lineValues: Array<number> = [];
     this.lineChartLabels.forEach(date => {
-      const registry = registries.filter(x => x.date as unknown as string === date);
+      const registry = registries.filter(x => x.date.isSame(date));
       let value = 0;
       if (registry !== null && registry.length > 0) {
-        value = (registry[0].totalCases * 100) / registry[0].country.population;
+        value = registry[0].totalCasesByPopulation;
       }
       lineValues.push(Number(value));
     });

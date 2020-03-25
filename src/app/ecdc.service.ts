@@ -4,6 +4,7 @@ import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
 import { Observable, Subscriber } from 'rxjs';
 import { map, mergeMap, switchMap, concatMap, tap } from 'rxjs/operators';
 import { IRegistryCountry } from './iregistry-country.interface';
+import * as moment from 'moment';
 
 @Injectable({
   providedIn: 'root'
@@ -44,7 +45,7 @@ export class EcdcService {
           const currentRecord = (lines[i] as string).split(',');
           if (currentRecord[1] != null) {
             const registry = {
-              date:  currentRecord[0] as unknown as Date,
+              date: moment(currentRecord[0]),
               location: currentRecord[1],
               newCases: Number(currentRecord[2]),
               newDeaths: Number(currentRecord[3]),
@@ -70,6 +71,7 @@ export class EcdcService {
         registries.forEach(value => {
           const country = x.filter(a => a.name.toLowerCase() === value.location.toLowerCase());
           if (country && country.length > 0) {
+            value.totalCasesByPopulation = ((value.totalCases * 100) / country[0].population) * 100;
             value.country = country[0];
           }
         });
