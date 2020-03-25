@@ -60,7 +60,7 @@ export class AppComponent implements OnInit {
   public lineChartOptions: ChartOptions = {
     responsive: true,
     legend: {
-      display: false,
+      display: true,
       position: 'right',
       align: 'center'
     },
