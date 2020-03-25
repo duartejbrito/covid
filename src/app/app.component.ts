@@ -47,7 +47,6 @@ export class AppComponent {
         type: 'time',
         time: {
           unit: 'day',
-          unitStepSize: 5,
           displayFormats: {
             day: 'MMM DD'
           }
