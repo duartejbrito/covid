@@ -73,6 +73,7 @@ export class EcdcService {
             || a.nativeName.toLowerCase() === value.location.toLowerCase());
           if (country && country.length > 0) {
             value.totalCasesByPopulation = ((value.totalCases * 100) / country[0].population);
+            value.population = country[0].population;
             value.country = country[0];
           }
         });

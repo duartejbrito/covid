@@ -1,6 +1,6 @@
-<div style="display: flex;">
-  <div style="flex-basis: 45%;">
-    <div style="display: block;">
+<div style="">
+  <div style="">
+    <div style="">
       <canvas #chart baseChart *ngIf="loaded" width="400" height="400"
         [chartType]="'line'"
         [legend]="true"
@@ -8,29 +8,38 @@
         [labels]="lineChartLabels"
         [options]="lineChartOptions">
       </canvas>
+
+      <mat-slider tickInterval="auto"
+        (change)="sliderChange($event)"
+        min="0"
+        [value]="currentSliderValue"
+        [max]="maxSliderValue">
+      </mat-slider>
+
+      <button mat-button (click)="playClick($event)">Play history!</button>
     </div>
   </div>
   <div style="width: 1000px;">
     <mat-form-field>
       <mat-label>Filter</mat-label>
-      <input matInput (keyup)="applyFilter($event)" placeholder="Ex. Italy">
+      <input matInput (keyup)="applyFilter($event)" placeholder="Ex. Portugal">
     </mat-form-field>
 
     <div class="mat-elevation-z8">
-      <table mat-table [dataSource]="dataForTable" matSort>
+      <table mat-table [dataSource]="dataForTable" matSort matSortStart="desc">
         <ng-container matColumnDef="select">
           <th mat-header-cell *matHeaderCellDef>
             <mat-checkbox (change)="$event ? masterToggle() : null"
-                          [checked]="selection.hasValue() && isAllSelected()"
-                          [indeterminate]="selection.hasValue() && !isAllSelected()"
-                          [aria-label]="checkboxLabel()">
+              [checked]="selection.hasValue() && isAllSelected()"
+              [indeterminate]="selection.hasValue() && !isAllSelected()"
+              [aria-label]="checkboxLabel()">
             </mat-checkbox>
           </th>
           <td mat-cell *matCellDef="let row">
             <mat-checkbox (click)="$event.stopPropagation()"
-                          (change)="$event ? selection.toggle(row) : null"
-                          [checked]="selection.isSelected(row)"
-                          [aria-label]="checkboxLabel(row)">
+              (change)="$event ? selection.toggle(row) : null"
+              [checked]="selection.isSelected(row)"
+              [aria-label]="checkboxLabel(row)">
             </mat-checkbox>
           </td>
         </ng-container>
@@ -56,11 +65,11 @@
         </ng-container>
         <ng-container matColumnDef="population">
           <th mat-header-cell *matHeaderCellDef mat-sort-header> Population </th>
-          <td mat-cell *matCellDef="let element"> {{ element.country ? abbreviateNumber(element.country.population) : 0}} </td>
+          <td mat-cell *matCellDef="let element"> {{element.population | shortNumber:3}} </td>
         </ng-container>
         <ng-container matColumnDef="totalCasesByPopulation">
           <th mat-header-cell *matHeaderCellDef mat-sort-header> Infected Population (%) </th>
-          <td mat-cell *matCellDef="let element"> {{roundValue(element.totalCasesByPopulation)}} </td>
+          <td mat-cell *matCellDef="let element"> {{element.totalCasesByPopulation | number:'1.3-3'}} </td>
         </ng-container>
 
         <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>

@@ -8,6 +8,7 @@ export interface IRegistry {
   newDeaths: number;
   totalCases: number;
   totalDeaths: number;
+  population: number;
   totalCasesByPopulation?: number;
   country?: IRegistryCountry;
 }

@@ -2,7 +2,7 @@ import { IRegistry } from './iregistry.interface';
 import { Component, ViewChild, OnInit } from '@angular/core';
 import { EcdcService } from './ecdc.service';
 import { mergeMap, toArray, groupBy, map, filter, max, min, distinct, concatMap, tap, count, take } from 'rxjs/operators';
-import { of, from, Observable } from 'rxjs';
+import { of, from, Observable, interval, Subscription } from 'rxjs';
 
 import { ChartDataSets, ChartOptions, ChartPoint } from 'chart.js';
 import { Color, BaseChartDirective, Label } from 'ng2-charts';
@@ -13,6 +13,9 @@ import { MatPaginator } from '@angular/material/paginator';
 import { MatTableDataSource } from '@angular/material/table';
 import { MatSort } from '@angular/material/sort';
 import { SelectionModel } from '@angular/cdk/collections';
+import { IRegistryCountry } from './iregistry-country.interface';
+import { DecimalPipe } from '@angular/common';
+import { MatSliderChange } from '@angular/material/slider';
 
 export const sortKeys = <T>(...keys: string[]) => (source: Observable<T[]>): Observable<T[]> => new Observable(observer => {
     return source.subscribe({
@@ -29,7 +32,8 @@ export const sortKeys = <T>(...keys: string[]) => (source: Observable<T[]>): Obs
 @Component({
   selector: 'app-root',
   templateUrl: './app.component.html',
-  styleUrls: ['./app.component.css']
+  styleUrls: ['./app.component.css'],
+  providers: [DecimalPipe]
 })
 export class AppComponent implements OnInit {
 
@@ -37,6 +41,9 @@ export class AppComponent implements OnInit {
 
   rawData: Array<IRegistry> = [];
   top: Array<string> = [];
+  currentSliderValue: number;
+  maxSliderValue: number;
+  playSub: Subscription;
 
   displayedColumns: string[] = [
     'select',
@@ -95,7 +102,7 @@ export class AppComponent implements OnInit {
         label: (item, data) => {
           const dataSet = data.datasets[item.datasetIndex];
           const dataItem = dataSet.data[item.index];
-          const dataItemRounded = this.roundValue(dataItem);
+          const dataItemRounded = this.numberPipe.transform(dataItem, '1.3-3');
           return `${dataSet.label}: ${dataItemRounded}%`;
         }
       }
@@ -104,7 +111,7 @@ export class AppComponent implements OnInit {
 
   @ViewChild(BaseChartDirective, { static: false }) chart: BaseChartDirective;
 
-  constructor(ecdcService: EcdcService) {
+  constructor(ecdcService: EcdcService, private numberPipe: DecimalPipe) {
     ecdcService.get().subscribe(result => {
       this.rawData = result;
 
@@ -135,15 +142,7 @@ export class AppComponent implements OnInit {
           toArray()
         ).subscribe(top => this.top = ['Portugal', ...top]);
 
-      const sortedDataDate = sortByKeys(this.rawData, 'date');
-
-      from(sortedDataDate)
-        .pipe(
-          map(x => x.date),
-          distinct(x => x.format()),
-          toArray(),
-        ).subscribe(dates => this.lineChartLabels = dates);
-
+      this.fetchChartLabels();
       this.fetchChartData();
     });
   }
@@ -157,14 +156,27 @@ export class AppComponent implements OnInit {
         ).subscribe(countries => {
           this.top = countries;
           this.fetchChartData();
-          this.chart.update();
         });
     });
   }
 
+  fetchChartLabels() {
+    const sortedDataDate = sortByKeys(this.rawData, 'date');
+
+    from(sortedDataDate)
+      .pipe(
+        map(x => x.date),
+        distinct(x => x.format()),
+        toArray(),
+      ).subscribe(dates => {
+        this.lineChartLabels = dates;
+        this.currentSliderValue = this.lineChartLabels.length - 1;
+        this.maxSliderValue = this.lineChartLabels.length - 1;
+      });
+  }
+
   fetchChartData() {
     this.loaded = false;
-    this.lineChartData = [];
     from(this.rawData)
         .pipe(
           map(x => x.location),
@@ -178,8 +190,15 @@ export class AppComponent implements OnInit {
                 filter(x => x.location === country),
                 toArray()
               ).subscribe(line => {
-                this.lineChartData.push({ label: country, data: this.mapLineChart(line) });
+                const filtered = this.lineChartData.filter(x => x.label === country);
+                if (filtered && filtered.length > 0) {
+                  filtered[0].data = this.mapLineChart(line);
+                } else {
+                  this.lineChartData.push({ label: country, data: this.mapLineChart(line) });
+                }
               });
+            } else {
+              this.lineChartData = this.lineChartData.filter(x => x.label !== country);
             }
           });
           this.loaded = true;
@@ -188,7 +207,8 @@ export class AppComponent implements OnInit {
 
   mapLineChart(registries: Array<IRegistry>): Array<number> {
     const lineValues: Array<number> = [];
-    this.lineChartLabels.forEach(date => {
+    const maxDate = this.lineChartLabels[this.currentSliderValue];
+    this.lineChartLabels.filter(x => x.isSameOrBefore(maxDate)).forEach(date => {
       const registry = registries.filter(x => x.date.isSame(date));
       let value = 0;
       if (registry !== null && registry.length > 0) {
@@ -198,31 +218,6 @@ export class AppComponent implements OnInit {
     });
     return lineValues;
   }
-
-  roundValue(value: number | ChartPoint) {
-    return Math.round((Number(value) + Number.EPSILON) * 100) / 100;
-  }
-
-  abbreviateNumber(value: number) {
-    let newValue = value.toString();
-    if (value >= 1000) {
-      const suffixes = ['', 'K', 'M', 'B', 'T'];
-      const suffixNum = Math.floor(('' + value).length / 3);
-      let shortValue: number;
-      for (let precision = 2; precision >= 1; precision--) {
-          shortValue = parseFloat((suffixNum !== 0 ? (value / Math.pow(1000, suffixNum) ) : value).toPrecision(precision));
-          const dotLessShortValue = (shortValue + '').replace(/[^a-zA-Z 0-9]+/g, '');
-          if (dotLessShortValue.length <= 2) { break; }
-      }
-      let shortValueString = shortValue.toString();
-      if (shortValue % 1 !== 0) {
-        shortValueString = shortValue.toFixed(1);
-      }
-
-      newValue = shortValueString + suffixes[suffixNum];
-    }
-    return newValue;
-}
 
   applyFilter(event: Event) {
     const filterValue = (event.target as HTMLInputElement).value;
@@ -246,5 +241,26 @@ export class AppComponent implements OnInit {
       return `${this.isAllSelected() ? 'select' : 'deselect'} all`;
     }
     return `${this.selection.isSelected(row) ? 'deselect' : 'select'} row ${row.location}`;
+  }
+
+  sliderChange(e: MatSliderChange) {
+    this.timeMovement(e.value);
+  }
+
+  playClick(e) {
+    let increment = 0;
+    this.playSub = interval(250).subscribe(x => {
+      if (increment === this.maxSliderValue) {
+        this.playSub.unsubscribe();
+      }
+      this.timeMovement(increment++);
+    });
+
+  }
+
+  timeMovement(value: number) {
+    this.currentSliderValue = this.lineChartLabels.slice(0, value).length;
+
+    this.fetchChartData();
   }
 }
