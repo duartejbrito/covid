@@ -63,6 +63,21 @@ export class AppComponent {
           labelString: 'Percentage by Population'
         }
       }]
+    },
+    tooltips: {
+      enabled: true,
+      callbacks: {
+        title: (item, data) => {
+          const tooltipItem = item[0];
+          return (data.labels[tooltipItem.index] as moment.Moment).format('L');
+        },
+        label: (item, data) => {
+          const dataSet = data.datasets[item.datasetIndex];
+          const dataItem = dataSet.data[item.index];
+          const dataItemRounded = Math.round((Number(dataItem) + Number.EPSILON) * 100) / 100;
+          return `${dataSet.label}: ${dataItemRounded}%`;
+        }
+      }
     }
   };
 
