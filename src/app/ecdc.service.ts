@@ -69,7 +69,8 @@ export class EcdcService {
     return this.http.get(`https://restcountries.eu/rest/v2/all`)
       .pipe(map((x: Array<IRegistryCountry>) => {
         registries.forEach(value => {
-          const country = x.filter(a => a.name.toLowerCase() === value.location.toLowerCase());
+          const country = x.filter(a => a.name.toLowerCase() === value.location.toLowerCase()
+            || a.nativeName.toLowerCase() === value.location.toLowerCase());
           if (country && country.length > 0) {
             value.totalCasesByPopulation = ((value.totalCases * 100) / country[0].population);
             value.country = country[0];

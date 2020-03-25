@@ -12,6 +12,7 @@ import * as moment from 'moment';
 import { MatPaginator } from '@angular/material/paginator';
 import { MatTableDataSource } from '@angular/material/table';
 import { MatSort } from '@angular/material/sort';
+import { SelectionModel } from '@angular/cdk/collections';
 
 export const sortKeys = <T>(...keys: string[]) => (source: Observable<T[]>): Observable<T[]> => new Observable(observer => {
     return source.subscribe({
@@ -37,9 +38,19 @@ export class AppComponent implements OnInit {
   rawData: Array<IRegistry> = [];
   top: Array<string> = [];
 
-  displayedColumns: string[] = ['location', 'newCases', 'newDeaths', 'totalCases', 'totalDeaths', 'population', 'totalCasesByPopulation'];
+  displayedColumns: string[] = [
+    'select',
+    'location',
+    'newCases',
+    'newDeaths',
+    'totalCases',
+    'totalDeaths',
+    'population',
+    'totalCasesByPopulation'
+  ];
   maxDate: moment.Moment;
   dataForTable: MatTableDataSource<IRegistry>;
+  selection = new SelectionModel<IRegistry>(true, []);
 
   @ViewChild(MatPaginator, {static: true}) paginator: MatPaginator;
   @ViewChild(MatSort, {static: true}) sort: MatSort;
@@ -49,6 +60,7 @@ export class AppComponent implements OnInit {
   public lineChartOptions: ChartOptions = {
     responsive: true,
     legend: {
+      display: false,
       position: 'right',
       align: 'center'
     },
@@ -90,17 +102,19 @@ export class AppComponent implements OnInit {
     }
   };
 
+  @ViewChild(BaseChartDirective, { static: false }) chart: BaseChartDirective;
+
   constructor(ecdcService: EcdcService) {
     ecdcService.get().subscribe(result => {
       this.rawData = result;
 
-      from(result)
+      from(this.rawData)
         .pipe(
           map(x => x.date),
           max()
         ).subscribe(maxDate => this.maxDate = maxDate);
 
-      from(result)
+      from(this.rawData)
           .pipe(
             filter(x => x.location.toLowerCase() !== 'world' && x.date.isSame(this.maxDate)),
             toArray()
@@ -110,7 +124,7 @@ export class AppComponent implements OnInit {
             this.dataForTable.sort = this.sort;
           });
 
-      const sortedDataTotal = sortByKeys(result, '-date', '-totalCases');
+      const sortedDataTotal = sortByKeys(this.rawData, '-date', '-totalCases');
 
       from(sortedDataTotal)
         .pipe(
@@ -121,7 +135,7 @@ export class AppComponent implements OnInit {
           toArray()
         ).subscribe(top => this.top = ['Portugal', ...top]);
 
-      const sortedDataDate = sortByKeys(result, 'date');
+      const sortedDataDate = sortByKeys(this.rawData, 'date');
 
       from(sortedDataDate)
         .pipe(
@@ -130,7 +144,28 @@ export class AppComponent implements OnInit {
           toArray(),
         ).subscribe(dates => this.lineChartLabels = dates);
 
-      from(result)
+      this.fetchChartData();
+    });
+  }
+
+  ngOnInit() {
+    this.selection.changed.subscribe(result => {
+      from(result.source.selected)
+        .pipe(
+          map(x => x.location),
+          toArray()
+        ).subscribe(countries => {
+          this.top = countries;
+          this.fetchChartData();
+          this.chart.update();
+        });
+    });
+  }
+
+  fetchChartData() {
+    this.loaded = false;
+    this.lineChartData = [];
+    from(this.rawData)
         .pipe(
           map(x => x.location),
           distinct(),
@@ -138,7 +173,7 @@ export class AppComponent implements OnInit {
         ).subscribe(countries => {
           countries.forEach(country => {
             if (this.top.indexOf(country) > -1) {
-              from(result)
+              from(this.rawData)
               .pipe(
                 filter(x => x.location === country),
                 toArray()
@@ -149,10 +184,6 @@ export class AppComponent implements OnInit {
           });
           this.loaded = true;
         });
-    });
-  }
-
-  ngOnInit() {
   }
 
   mapLineChart(registries: Array<IRegistry>): Array<number> {
@@ -172,8 +203,48 @@ export class AppComponent implements OnInit {
     return Math.round((Number(value) + Number.EPSILON) * 100) / 100;
   }
 
+  abbreviateNumber(value: number) {
+    let newValue = value.toString();
+    if (value >= 1000) {
+      const suffixes = ['', 'K', 'M', 'B', 'T'];
+      const suffixNum = Math.floor(('' + value).length / 3);
+      let shortValue: number;
+      for (let precision = 2; precision >= 1; precision--) {
+          shortValue = parseFloat((suffixNum !== 0 ? (value / Math.pow(1000, suffixNum) ) : value).toPrecision(precision));
+          const dotLessShortValue = (shortValue + '').replace(/[^a-zA-Z 0-9]+/g, '');
+          if (dotLessShortValue.length <= 2) { break; }
+      }
+      let shortValueString = shortValue.toString();
+      if (shortValue % 1 !== 0) {
+        shortValueString = shortValue.toFixed(1);
+      }
+
+      newValue = shortValueString + suffixes[suffixNum];
+    }
+    return newValue;
+}
+
   applyFilter(event: Event) {
     const filterValue = (event.target as HTMLInputElement).value;
     this.dataForTable.filter = filterValue.trim().toLowerCase();
+  }
+
+  isAllSelected() {
+    const numSelected = this.selection.selected.length;
+    const numRows = this.dataForTable ? this.dataForTable.data.length : 0;
+    return numSelected === numRows;
+  }
+
+  masterToggle() {
+    this.isAllSelected() ?
+        this.selection.clear() :
+        this.dataForTable.data.forEach(row => this.selection.select(row));
+  }
+
+  checkboxLabel(row?: IRegistry): string {
+    if (!row) {
+      return `${this.isAllSelected() ? 'select' : 'deselect'} all`;
+    }
+    return `${this.selection.isSelected(row) ? 'deselect' : 'select'} row ${row.location}`;
   }
 }
