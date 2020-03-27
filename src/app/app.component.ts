@@ -267,4 +267,10 @@ export class AppComponent implements OnInit {
 
     return false;
   }
+
+  formatSliderLabel = (a: moment.Moment[]) => {
+    return (value: number) => {
+      return a && a.length > 0 ? a[value].format('L') : '';
+    };
+  }
 }
