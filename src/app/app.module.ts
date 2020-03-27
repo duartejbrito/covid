@@ -13,6 +13,8 @@ import { MatInputModule } from '@angular/material/input';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatSliderModule } from '@angular/material/slider';
 import { MatButtonModule } from '@angular/material/button';
+import { MatGridListModule } from '@angular/material/grid-list';
+import { MatSelectModule } from '@angular/material/select';
 import { ShortNumberPipe } from './short-number.pipe';
 
 @NgModule({
@@ -33,6 +35,8 @@ import { ShortNumberPipe } from './short-number.pipe';
     MatCheckboxModule,
     MatSliderModule,
     MatButtonModule,
+    MatGridListModule,
+    MatSelectModule,
   ],
   providers: [],
   bootstrap: [AppComponent]

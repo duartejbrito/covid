@@ -1,12 +1,11 @@
 /* You can add global styles to this file, and also import other style files */
 
 html, body { height: 100%; }
-body { margin: 0; font-family: Roboto, "Helvetica Neue", sans-serif; }
+body { margin: 0; font-family: Roboto, "Helvetica Neue", sans-serif; margin-top: 20px; }
 table { width: 100%; }
-.mat-form-field {
-  font-size: 14px;
-  width: 100%;
-}
-mat-slider {
-  width: 100%;
-}
+.mat-form-field { font-size: 14px; width: 100%; }
+mat-slider { width: 100%; }
+.controls { width: 1000px; }
+.controlWrapper{ display: inline-flex; width: 100%; }
+.buttonWrapper{ line-height: 45px; }
+.sliderWrapper{ width: 100%; padding-left: 10px; }

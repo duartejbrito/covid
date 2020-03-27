@@ -43,7 +43,7 @@ export class EcdcService {
 
         for (let i = 1; i < lines.length; i++) {
           const currentRecord = (lines[i] as string).split(',');
-          if (currentRecord[1] != null) {
+          if (currentRecord[1] != null && currentRecord[1].toLowerCase() !== 'world') {
             const registry = {
               date: moment(currentRecord[0]),
               location: currentRecord[1],

@@ -16,6 +16,7 @@ import { SelectionModel } from '@angular/cdk/collections';
 import { IRegistryCountry } from './iregistry-country.interface';
 import { DecimalPipe } from '@angular/common';
 import { MatSliderChange } from '@angular/material/slider';
+import { MatSelectChange } from '@angular/material/select';
 
 export const sortKeys = <T>(...keys: string[]) => (source: Observable<T[]>): Observable<T[]> => new Observable(observer => {
     return source.subscribe({
@@ -39,8 +40,9 @@ export class AppComponent implements OnInit {
 
   loaded = false;
 
+  selectedMetric = 'totalCases';
+
   rawData: Array<IRegistry> = [];
-  top: Array<string> = [];
   currentSliderValue: number;
   maxSliderValue: number;
   playSub: Subscription;
@@ -84,11 +86,7 @@ export class AppComponent implements OnInit {
       yAxes: [{
         ticks: {
           min: 0,
-          callback: value => `${value}%`,
-        },
-        scaleLabel: {
-          display: true,
-          labelString: 'Percentage by Population'
+          callback: value => `${value}${this.isPercentageMetric() ? '%' : ''}`,
         }
       }]
     },
@@ -102,8 +100,8 @@ export class AppComponent implements OnInit {
         label: (item, data) => {
           const dataSet = data.datasets[item.datasetIndex];
           const dataItem = dataSet.data[item.index];
-          const dataItemRounded = this.numberPipe.transform(dataItem, '1.3-3');
-          return `${dataSet.label}: ${dataItemRounded}%`;
+          const dataItemRounded = this.numberPipe.transform(dataItem, `1.${this.isPercentageMetric() ? '3-3' : '0'}`);
+          return `${dataSet.label}: ${dataItemRounded}${this.isPercentageMetric() ? '%' : ''}`;
         }
       }
     }
@@ -123,7 +121,7 @@ export class AppComponent implements OnInit {
 
       from(this.rawData)
           .pipe(
-            filter(x => x.location.toLowerCase() !== 'world' && x.date.isSame(this.maxDate)),
+            filter(x => x.date.isSame(this.maxDate)),
             toArray()
           ).subscribe(dataForTable => {
             this.dataForTable = new MatTableDataSource<IRegistry>(dataForTable);
@@ -131,16 +129,16 @@ export class AppComponent implements OnInit {
             this.dataForTable.sort = this.sort;
           });
 
-      const sortedDataTotal = sortByKeys(this.rawData, '-date', '-totalCases');
+      const sortedDataTotal = sortByKeys(this.rawData, '-date', `-${this.selectedMetric}`);
 
       from(sortedDataTotal)
         .pipe(
-          filter(x => x.location.toLowerCase() !== 'world'),
-          map(x => x.location),
-          distinct(),
+          distinct(x => x.location),
           take(5),
           toArray()
-        ).subscribe(top => this.top = ['Portugal', ...top]);
+        ).subscribe(x => x.forEach(value => {
+          this.selection.select(value);
+        }));
 
       this.fetchChartLabels();
       this.fetchChartData();
@@ -149,14 +147,7 @@ export class AppComponent implements OnInit {
 
   ngOnInit() {
     this.selection.changed.subscribe(result => {
-      from(result.source.selected)
-        .pipe(
-          map(x => x.location),
-          toArray()
-        ).subscribe(countries => {
-          this.top = countries;
-          this.fetchChartData();
-        });
+      this.fetchChartData();
     });
   }
 
@@ -179,26 +170,25 @@ export class AppComponent implements OnInit {
     this.loaded = false;
     from(this.rawData)
         .pipe(
-          map(x => x.location),
-          distinct(),
+          distinct(x => x.location),
           toArray()
-        ).subscribe(countries => {
-          countries.forEach(country => {
-            if (this.top.indexOf(country) > -1) {
+        ).subscribe(items => {
+          items.forEach(item => {
+            if (this.selection.selected.filter(x => x.location === item.location).length > 0) {
               from(this.rawData)
               .pipe(
-                filter(x => x.location === country),
+                filter(x => x.location === item.location),
                 toArray()
               ).subscribe(line => {
-                const filtered = this.lineChartData.filter(x => x.label === country);
+                const filtered = this.lineChartData.filter(x => x.label === item.location);
                 if (filtered && filtered.length > 0) {
                   filtered[0].data = this.mapLineChart(line);
                 } else {
-                  this.lineChartData.push({ label: country, data: this.mapLineChart(line) });
+                  this.lineChartData.push({ label: item.location, data: this.mapLineChart(line) });
                 }
               });
             } else {
-              this.lineChartData = this.lineChartData.filter(x => x.label !== country);
+              this.lineChartData = this.lineChartData.filter(x => x.label !== item.location);
             }
           });
           this.loaded = true;
@@ -212,7 +202,7 @@ export class AppComponent implements OnInit {
       const registry = registries.filter(x => x.date.isSame(date));
       let value = 0;
       if (registry !== null && registry.length > 0) {
-        value = registry[0].totalCasesByPopulation;
+        value = registry[0][this.selectedMetric];
       }
       lineValues.push(Number(value));
     });
@@ -262,5 +252,17 @@ export class AppComponent implements OnInit {
     this.currentSliderValue = this.lineChartLabels.slice(0, value).length;
 
     this.fetchChartData();
+  }
+
+  metricChange(e: MatSelectChange) {
+    this.fetchChartData();
+  }
+
+  isPercentageMetric() {
+    if (this.selectedMetric === 'totalCasesByPopulation') {
+      return true;
+    }
+
+    return false;
   }
 }
