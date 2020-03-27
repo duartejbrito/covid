@@ -134,7 +134,7 @@ export class AppComponent implements OnInit {
       from(sortedDataTotal)
         .pipe(
           distinct(x => x.location),
-          take(5),
+          take(10),
           toArray()
         ).subscribe(x => x.forEach(value => {
           this.selection.select(value);
