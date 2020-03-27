@@ -13,7 +13,7 @@
   <div class="controls">
     <mat-form-field>
       <mat-label>Metric</mat-label>
-      <mat-select (selectionChange)="metricChange($event)" [(value)]="selectedMetric">
+      <mat-select (selectionChange)="metricChange()" [(value)]="selectedMetric">
         <mat-option [value]="'totalCases'">Evolution of cases</mat-option>
         <mat-option [value]="'totalDeaths'">Evolution of deaths</mat-option>
         <mat-option [value]="'totalCasesByPopulation'">Evolution of cases by Population</mat-option>
@@ -21,10 +21,10 @@
     </mat-form-field>
 
     <mat-form-field floatLabel="always" appearance="none">
-      <mat-label>Time - {{lineChartLabels && lineChartLabels.length > 0 ? lineChartLabels[currentSliderValue].format('L') : ''}}</mat-label>
+      <mat-label>Date - {{lineChartLabels && lineChartLabels.length > 0 ? lineChartLabels[currentSliderValue].format('L') : ''}}</mat-label>
       <div class="controlWrapper">
         <div class="buttonWrapper">
-          <button mat-raised-button color="primary" (click)="playClick($event)">Play history!</button>
+          <button mat-raised-button color="primary" (click)="playClick()">Play history!</button>
         </div>
         <div class="sliderWrapper">
           <mat-slider tickInterval="auto"

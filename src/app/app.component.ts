@@ -1,11 +1,11 @@
 import { IRegistry } from './iregistry.interface';
 import { Component, ViewChild, OnInit } from '@angular/core';
 import { EcdcService } from './ecdc.service';
-import { mergeMap, toArray, groupBy, map, filter, max, min, distinct, concatMap, tap, count, take } from 'rxjs/operators';
-import { of, from, Observable, interval, Subscription } from 'rxjs';
+import { toArray, map, filter, max, distinct, take } from 'rxjs/operators';
+import { from, Observable, interval, Subscription } from 'rxjs';
 
-import { ChartDataSets, ChartOptions, ChartPoint } from 'chart.js';
-import { Color, BaseChartDirective, Label } from 'ng2-charts';
+import { ChartDataSets, ChartOptions } from 'chart.js';
+import { BaseChartDirective } from 'ng2-charts';
 
 import { sortByKeys } from './sort-by-keys';
 import * as moment from 'moment';
@@ -13,10 +13,8 @@ import { MatPaginator } from '@angular/material/paginator';
 import { MatTableDataSource } from '@angular/material/table';
 import { MatSort, MatSortable } from '@angular/material/sort';
 import { SelectionModel } from '@angular/cdk/collections';
-import { IRegistryCountry } from './iregistry-country.interface';
 import { DecimalPipe } from '@angular/common';
 import { MatSliderChange } from '@angular/material/slider';
-import { MatSelectChange } from '@angular/material/select';
 
 export const sortKeys = <T>(...keys: string[]) => (source: Observable<T[]>): Observable<T[]> => new Observable(observer => {
     return source.subscribe({
@@ -147,7 +145,7 @@ export class AppComponent implements OnInit {
   }
 
   ngOnInit() {
-    this.selection.changed.subscribe(result => {
+    this.selection.changed.subscribe(() => {
       this.fetchChartData();
     });
   }
@@ -238,34 +236,28 @@ export class AppComponent implements OnInit {
     this.timeMovement(e.value);
   }
 
-  playClick(e) {
+  playClick() {
     let increment = 0;
-    this.playSub = interval(250).subscribe(x => {
+    this.playSub = interval(250).subscribe(() => {
       if (increment === this.maxSliderValue) {
         this.playSub.unsubscribe();
       }
       this.timeMovement(increment++);
     });
-
   }
 
   timeMovement(value: number) {
     this.currentSliderValue = this.lineChartLabels.slice(0, value).length;
-
     this.fetchChartData();
   }
 
-  metricChange(e: MatSelectChange) {
+  metricChange() {
     this.sort.sort({ id: this.selectedMetric, start: 'desc' } as MatSortable);
     this.fetchChartData();
   }
 
   isPercentageMetric() {
-    if (this.selectedMetric === 'totalCasesByPopulation') {
-      return true;
-    }
-
-    return false;
+    return this.selectedMetric === 'totalCasesByPopulation';
   }
 
   formatSliderLabel = (a: moment.Moment[]) => {

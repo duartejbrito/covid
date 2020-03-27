@@ -75,7 +75,11 @@ export class EcdcService {
             || a.name.toLowerCase() === value.matchingLocation.toLowerCase());
           if (country && country.length > 0) {
             value.totalCasesByPopulation = ((value.totalCases * 100) / country[0].population);
+            value.totalDeathsByPopulation = ((value.totalDeaths * 100) / country[0].population);
+            value.totalCasesByArea = ((value.totalCases * 100) / country[0].area);
+            value.totalDeathsByArea = ((value.totalDeaths * 100) / country[0].area);
             value.population = country[0].population;
+            value.area = country[0].area;
             value.country = country[0];
           }
         });

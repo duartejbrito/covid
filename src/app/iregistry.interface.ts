@@ -11,5 +11,9 @@ export interface IRegistry {
   totalDeaths: number;
   population: number;
   totalCasesByPopulation: number;
+  totalDeathsByPopulation: number;
+  area: number;
+  totalCasesByArea: number;
+  totalDeathsByArea: number;
   country: IRegistryCountry;
 }
