@@ -9,3 +9,4 @@ mat-slider { width: 100%; }
 .controlWrapper{ display: inline-flex; width: 100%; }
 .buttonWrapper{ line-height: 45px; }
 .sliderWrapper{ width: 100%; padding-left: 10px; }
+.countryFlag { width: 20px; }

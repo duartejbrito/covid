@@ -11,7 +11,7 @@ import { sortByKeys } from './sort-by-keys';
 import * as moment from 'moment';
 import { MatPaginator } from '@angular/material/paginator';
 import { MatTableDataSource } from '@angular/material/table';
-import { MatSort } from '@angular/material/sort';
+import { MatSort, MatSortable } from '@angular/material/sort';
 import { SelectionModel } from '@angular/cdk/collections';
 import { IRegistryCountry } from './iregistry-country.interface';
 import { DecimalPipe } from '@angular/common';
@@ -49,6 +49,7 @@ export class AppComponent implements OnInit {
 
   displayedColumns: string[] = [
     'select',
+    'flag',
     'location',
     'newCases',
     'newDeaths',
@@ -134,7 +135,7 @@ export class AppComponent implements OnInit {
       from(sortedDataTotal)
         .pipe(
           distinct(x => x.location),
-          take(10),
+          take(5),
           toArray()
         ).subscribe(x => x.forEach(value => {
           this.selection.select(value);
@@ -255,6 +256,7 @@ export class AppComponent implements OnInit {
   }
 
   metricChange(e: MatSelectChange) {
+    this.sort.sort({ id: this.selectedMetric, start: 'desc' } as MatSortable);
     this.fetchChartData();
   }
 

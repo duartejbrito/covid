@@ -4,6 +4,7 @@ import * as moment from 'moment';
 export interface IRegistry {
   date: moment.Moment;
   location: string;
+  matchingLocation: string;
   newCases: number;
   newDeaths: number;
   totalCases: number;

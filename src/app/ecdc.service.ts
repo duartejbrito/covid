@@ -47,6 +47,7 @@ export class EcdcService {
             const registry = {
               date: moment(currentRecord[0]),
               location: currentRecord[1],
+              matchingLocation: this.getLocationName(currentRecord[1]),
               newCases: Number(currentRecord[2]),
               newDeaths: Number(currentRecord[3]),
               totalCases: Number(currentRecord[4]),
@@ -70,7 +71,8 @@ export class EcdcService {
       .pipe(map((x: Array<IRegistryCountry>) => {
         registries.forEach(value => {
           const country = x.filter(a => a.name.toLowerCase() === value.location.toLowerCase()
-            || a.nativeName.toLowerCase() === value.location.toLowerCase());
+            || a.nativeName.toLowerCase() === value.location.toLowerCase()
+            || a.name.toLowerCase() === value.matchingLocation.toLowerCase());
           if (country && country.length > 0) {
             value.totalCasesByPopulation = ((value.totalCases * 100) / country[0].population);
             value.population = country[0].population;
@@ -79,5 +81,34 @@ export class EcdcService {
         });
         return registries;
       }));
+  }
+
+  getLocationName(name: string): string {
+    const replaces: { [id: string]: string; } = {
+      "Brunei": "Brunei Darussalam",
+      "Cape Verde": "Cabo Verde",
+      "Cote d'Ivoire": "Côte d'Ivoire",
+      "Curacao": "Curaçao",
+      "Democratic Republic of Congo": "Congo (Democratic Republic of the)",
+      "Faeroe Islands": "Faroe Islands",
+      "Iran": "Iran (Islamic Republic of)",
+      "Kosovo": "Republic of Kosovo",
+      "Laos": "Lao People's Democratic Republic",
+      "Macedonia": "Macedonia (the former Yugoslav Republic of)",
+      "Palestine": "Palestine, State of",
+      "Russia": "Russian Federation",
+      "South Korea": "Korea (Republic of)",
+      "Syria": "Syrian Arab Republic",
+      "Timor": "Timor-Leste",
+      "United States Virgin Islands": "Virgin Islands (U.S.)",
+      "Vatican": "Holy See",
+      "Vietnam": "Viet Nam",
+    };
+
+    if (replaces[name]) {
+      return replaces[name];
+    }
+
+    return name;
   }
 }
