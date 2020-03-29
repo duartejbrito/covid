@@ -4,7 +4,8 @@ import { OpenCovid } from '../models/opencovid/open-covid';
 import { Injectable, Injector } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { CsvService, ICsvProfile } from './csv.service';
+import { CsvService } from './csv.service';
+import { CsvProfile } from '../models/csv/csv-profile';
 
 @Injectable({
   providedIn: 'root'
@@ -29,7 +30,7 @@ export class OpenCovidService {
       { index: 11, property: 'CurrentlySevere', type: 'number' },
       { index: 12, property: 'CurrentlyCritical', type: 'number' }
     ]
-  } as ICsvProfile;
+  } as CsvProfile;
   private csvService: CsvService<OpenCovidCategories>;
 
   constructor(private http: HttpClient, injector: Injector) {

@@ -1,7 +1,8 @@
 import { Ecdc } from '../models/ecdc/ecdc';
 import { Injectable, Injector } from '@angular/core';
 import { Observable } from 'rxjs';
-import { ICsvProfile, CsvService } from './csv.service';
+import { CsvService } from './csv.service';
+import { CsvProfile } from '../models/csv/csv-profile';
 
 @Injectable({
   providedIn: 'root'
@@ -18,7 +19,7 @@ export class EcdcService {
       { index: 4, property: 'totalCases', type: 'number' },
       { index: 5, property: 'totalDeaths', type: 'number' }
     ]
-  } as ICsvProfile;
+  } as CsvProfile;
   private csvService: CsvService<Ecdc>;
 
   constructor(injector: Injector) {

@@ -3,13 +3,14 @@ import { Observable, Subscriber } from 'rxjs';
 import { HttpHeaders, HttpParams, HttpClient } from '@angular/common/http';
 import { switchMap } from 'rxjs/operators';
 import * as moment from 'moment';
+import { CsvProfile } from '../models/csv/csv-profile';
 
 @Injectable({
   providedIn: 'root'
 })
 export class CsvService<T> {
 
-  constructor(private http: HttpClient, @Inject('csvProfile') public csvProfile: ICsvProfile) {
+  constructor(private http: HttpClient, @Inject('csvProfile') public csvProfile: CsvProfile) {
   }
 
   get(url: string): Observable<T[]> {
@@ -74,17 +75,4 @@ export class CsvService<T> {
       });
     });
   }
-}
-
-type CsvMapProfileType = 'Moment' | 'string' | 'number' | 'boolean';
-type CsvMapProfileFormat = (item: any, map: ICsvMapProfile, currentLine: string[]) => moment.Moment | string | number | boolean;
-export interface ICsvProfile {
-  skipFirstLine: boolean;
-  maps: ICsvMapProfile[];
-}
-export interface ICsvMapProfile {
-  index: number;
-  property: number | string;
-  type: CsvMapProfileType;
-  format?: CsvMapProfileFormat;
 }
