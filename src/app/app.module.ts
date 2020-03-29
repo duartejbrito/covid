@@ -4,6 +4,8 @@ import { ChartsModule } from 'ng2-charts';
 import { NgModule } from '@angular/core';
 
 import { AppComponent } from './app.component';
+import { ShortNumberPipe } from './pipes/short-number.pipe';
+
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { MatTableModule } from '@angular/material/table';
 import { MatPaginatorModule } from '@angular/material/paginator';
@@ -15,7 +17,9 @@ import { MatSliderModule } from '@angular/material/slider';
 import { MatButtonModule } from '@angular/material/button';
 import { MatGridListModule } from '@angular/material/grid-list';
 import { MatSelectModule } from '@angular/material/select';
-import { ShortNumberPipe } from './short-number.pipe';
+import { GoogleMapsModule } from '@angular/google-maps';
+
+
 
 @NgModule({
   declarations: [
@@ -37,6 +41,7 @@ import { ShortNumberPipe } from './short-number.pipe';
     MatButtonModule,
     MatGridListModule,
     MatSelectModule,
+    GoogleMapsModule,
   ],
   providers: [],
   bootstrap: [AppComponent]

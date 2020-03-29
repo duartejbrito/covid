@@ -1,19 +1,24 @@
-import { IRegistryCountry } from './iregistry-country.interface';
 import * as moment from 'moment';
 
-export interface IRegistry {
+export interface IAppDatasource {
   date: moment.Moment;
-  location: string;
-  matchingLocation: string;
+
+  countryCode: string;
+  countryName: string;
+  flag: string;
+  region: string;
+  population: number;
+  area: number;
+  latitude: number;
+  longitude: number;
+
   newCases: number;
   newDeaths: number;
   totalCases: number;
   totalDeaths: number;
-  population: number;
+
   totalCasesByPopulation: number;
   totalDeathsByPopulation: number;
-  area: number;
   totalCasesByArea: number;
   totalDeathsByArea: number;
-  country: IRegistryCountry;
 }

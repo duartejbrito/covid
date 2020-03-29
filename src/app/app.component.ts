@@ -1,13 +1,11 @@
-import { IRegistry } from './iregistry.interface';
+import { IAppDatasource } from './models/iapp-datasource';
 import { Component, ViewChild, OnInit } from '@angular/core';
-import { EcdcService } from './ecdc.service';
-import { toArray, map, filter, max, distinct, take } from 'rxjs/operators';
-import { from, Observable, interval, Subscription } from 'rxjs';
+import { toArray, map, filter, max, take, groupBy, mergeMap } from 'rxjs/operators';
+import { from, interval, Subscription } from 'rxjs';
 
 import { ChartDataSets, ChartOptions } from 'chart.js';
 import { BaseChartDirective } from 'ng2-charts';
 
-import { sortByKeys } from './sort-by-keys';
 import * as moment from 'moment';
 import { MatPaginator } from '@angular/material/paginator';
 import { MatTableDataSource } from '@angular/material/table';
@@ -15,18 +13,7 @@ import { MatSort, MatSortable } from '@angular/material/sort';
 import { SelectionModel } from '@angular/cdk/collections';
 import { DecimalPipe } from '@angular/common';
 import { MatSliderChange } from '@angular/material/slider';
-
-export const sortKeys = <T>(...keys: string[]) => (source: Observable<T[]>): Observable<T[]> => new Observable(observer => {
-    return source.subscribe({
-        next(x) {
-            observer.next(
-                sortByKeys(x, ...keys)
-            );
-        },
-        error(err) { observer.error(err); },
-        complete() { observer.complete(); }
-    });
-});
+import { AppService } from './services/app.service';
 
 @Component({
   selector: 'app-root',
@@ -40,7 +27,7 @@ export class AppComponent implements OnInit {
 
   selectedMetric = 'totalCases';
 
-  rawData: Array<IRegistry> = [];
+  rawData: IAppDatasource[] = [];
   currentSliderValue: number;
   maxSliderValue: number;
   playSub: Subscription;
@@ -57,8 +44,8 @@ export class AppComponent implements OnInit {
     'totalCasesByPopulation'
   ];
   maxDate: moment.Moment;
-  dataForTable: MatTableDataSource<IRegistry>;
-  selection = new SelectionModel<IRegistry>(true, []);
+  dataForTable: MatTableDataSource<IAppDatasource>;
+  selection = new SelectionModel<IAppDatasource>(true, []);
 
   @ViewChild(MatPaginator, {static: true}) paginator: MatPaginator;
   @ViewChild(MatSort, {static: true}) sort: MatSort;
@@ -108,93 +95,99 @@ export class AppComponent implements OnInit {
 
   @ViewChild(BaseChartDirective, { static: false }) chart: BaseChartDirective;
 
-  constructor(ecdcService: EcdcService, private numberPipe: DecimalPipe) {
-    ecdcService.get().subscribe(result => {
-      this.rawData = result;
+  constructor(appService: AppService, private numberPipe: DecimalPipe) {
+    appService.datasource.subscribe(result => this.init(result));
+  }
 
-      from(this.rawData)
-        .pipe(
-          map(x => x.date),
-          max()
-        ).subscribe(maxDate => this.maxDate = maxDate);
+  init(data: IAppDatasource[]) {
+    this.rawData = data;
 
-      from(this.rawData)
+    from(this.rawData)
+      .pipe(
+        map(x => x.date),
+        max()
+      ).subscribe(maxDate => {
+        this.maxDate = maxDate;
+        this.fetchChartLabels();
+      });
+
+    from(this.rawData)
+      .pipe(
+        filter(x => x.date.isSame(this.maxDate)),
+        toArray()
+      ).subscribe(dataForTable => {
+        this.dataForTable = new MatTableDataSource<IAppDatasource>(dataForTable);
+        this.dataForTable.paginator = this.paginator;
+        this.dataForTable.sort = this.sort;
+
+        from(this.dataForTable.sortData(dataForTable, this.sort))
           .pipe(
-            filter(x => x.date.isSame(this.maxDate)),
+            take(5),
             toArray()
-          ).subscribe(dataForTable => {
-            this.dataForTable = new MatTableDataSource<IRegistry>(dataForTable);
-            this.dataForTable.paginator = this.paginator;
-            this.dataForTable.sort = this.sort;
-          });
-
-      const sortedDataTotal = sortByKeys(this.rawData, '-date', `-${this.selectedMetric}`);
-
-      from(sortedDataTotal)
-        .pipe(
-          distinct(x => x.location),
-          take(5),
-          toArray()
-        ).subscribe(x => x.forEach(value => {
-          this.selection.select(value);
-        }));
-
-      this.fetchChartLabels();
-      this.fetchChartData();
-    });
+          ).subscribe(x => x.forEach(value => {
+            this.selection.select(value);
+          }));
+      });
   }
 
   ngOnInit() {
-    this.selection.changed.subscribe(() => {
-      this.fetchChartData();
+    this.selection.changed.subscribe((changes) => {
+      if (changes.removed.length > 0) {
+        this.lineChartData = this.lineChartData.filter(x => changes.removed.filter(c => c.countryName === x.label).length === 0 );
+      }
+
+      if (changes.added.length > 0) {
+        this.fetchChartData();
+      }
     });
   }
 
-  fetchChartLabels() {
-    const sortedDataDate = sortByKeys(this.rawData, 'date');
+  generateRangeOfDates(
+    start: moment.Moment,
+    end: moment.Moment,
+    key: moment.unitOfTime.DurationConstructor,
+    arr = [start.startOf(key)]): Array<moment.Moment> {
+    const next = moment(start).add(1, key).startOf(key);
+    if (next.isAfter(end, key)) {
+      return arr;
+    }
+    return this.generateRangeOfDates(next, end, key, arr.concat(next));
+  }
 
-    from(sortedDataDate)
-      .pipe(
-        map(x => x.date),
-        distinct(x => x.format()),
-        toArray(),
-      ).subscribe(dates => {
-        this.lineChartLabels = dates;
-        this.currentSliderValue = this.lineChartLabels.length - 1;
-        this.maxSliderValue = this.lineChartLabels.length - 1;
-      });
+  fetchChartLabels() {
+    const rawDates = this.generateRangeOfDates(moment('2019-12-31'), this.maxDate, 'day');
+
+    this.lineChartLabels = rawDates;
+    this.currentSliderValue = this.lineChartLabels.length - 1;
+    this.maxSliderValue = this.lineChartLabels.length - 1;
   }
 
   fetchChartData() {
     this.loaded = false;
     from(this.rawData)
-        .pipe(
-          distinct(x => x.location),
-          toArray()
-        ).subscribe(items => {
-          items.forEach(item => {
-            if (this.selection.selected.filter(x => x.location === item.location).length > 0) {
-              from(this.rawData)
-              .pipe(
-                filter(x => x.location === item.location),
-                toArray()
-              ).subscribe(line => {
-                const filtered = this.lineChartData.filter(x => x.label === item.location);
-                if (filtered && filtered.length > 0) {
-                  filtered[0].data = this.mapLineChart(line);
-                } else {
-                  this.lineChartData.push({ label: item.location, data: this.mapLineChart(line) });
-                }
-              });
-            } else {
-              this.lineChartData = this.lineChartData.filter(x => x.label !== item.location);
-            }
-          });
-          this.loaded = true;
-        });
+      .pipe(
+        filter(x => this.selection.selected.filter(s => s.countryName === x.countryName).length > 0),
+        groupBy(x => x.countryName),
+        mergeMap(x => x.pipe(toArray())),
+        map(x => {
+          return {
+            label: x[0].countryName,
+            data: this.mapLineChart(x)
+          } as ChartDataSets;
+        })
+      ).subscribe(item => {
+        const filtered = this.lineChartData.filter(x => x.label === item.label);
+        if (filtered && filtered.length > 0) {
+          filtered[0].data = item.data;
+        } else {
+          this.lineChartData.push(item);
+          this.chart?.updateColors();
+        }
+        this.loaded = true;
+      });
   }
 
-  mapLineChart(registries: Array<IRegistry>): Array<number> {
+  mapLineChart(registries: Array<IAppDatasource>): Array<number> {
     const lineValues: Array<number> = [];
     const maxDate = this.lineChartLabels[this.currentSliderValue];
     this.lineChartLabels.filter(x => x.isSameOrBefore(maxDate)).forEach(date => {
@@ -225,11 +218,11 @@ export class AppComponent implements OnInit {
         this.dataForTable.data.forEach(row => this.selection.select(row));
   }
 
-  checkboxLabel(row?: IRegistry): string {
+  checkboxLabel(row?: IAppDatasource): string {
     if (!row) {
       return `${this.isAllSelected() ? 'select' : 'deselect'} all`;
     }
-    return `${this.selection.isSelected(row) ? 'deselect' : 'select'} row ${row.location}`;
+    return `${this.selection.isSelected(row) ? 'deselect' : 'select'} row ${row.countryName}`;
   }
 
   sliderChange(e: MatSliderChange) {
@@ -238,7 +231,7 @@ export class AppComponent implements OnInit {
 
   playClick() {
     let increment = 0;
-    this.playSub = interval(250).subscribe(() => {
+    this.playSub = interval(10000 / this.maxSliderValue).subscribe(() => {
       if (increment === this.maxSliderValue) {
         this.playSub.unsubscribe();
       }
@@ -253,6 +246,7 @@ export class AppComponent implements OnInit {
 
   metricChange() {
     this.sort.sort({ id: this.selectedMetric, start: 'desc' } as MatSortable);
+    this.lineChartData = [];
     this.fetchChartData();
   }
 
