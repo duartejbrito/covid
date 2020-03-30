@@ -21,7 +21,7 @@ jobs:
           ng build --prod --base-href="/covid/"
       - name: Replace keys
         run: |
-          sed -i "s/[YOUR_GTAG_MANAGER_ID]/$GTAG_MANAGER_ID/g" dist/covid/index.html
+          sed -i "s/YOUR_GTAG_MANAGER_ID/$GTAG_MANAGER_ID/g" dist/covid/index.html
         env:
           GTAG_MANAGER_ID: ${{ secrets.GTAG_MANAGER_ID }}
       - name: Deploy
