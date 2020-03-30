@@ -1,0 +1,80 @@
+/* You can add global styles to this file, and also import other style files */
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: Roboto, "Helvetica Neue", sans-serif;
+  margin-top: 20px;
+  overflow-y: hidden;
+}
+
+.fill-spacer {
+  flex: 1 1 auto;
+}
+
+.active-link {
+  background-color: #e0e0e0 !important;
+  color: #3f51b5 !important;
+}
+
+.countryFlag {
+  width: 20px;
+}
+
+h2 {
+  text-align: center;
+}
+
+.app-container {
+  margin: 10px 20px;
+}
+
+.chart-container {
+  position: relative;
+  margin: auto;
+  height: 100%;
+  width: 100%;
+}
+
+// TODO: CHECK
+
+table {
+  width: 100%;
+}
+
+.mat-form-field {
+  font-size: 14px;
+  width: 100%;
+}
+
+mat-slider {
+  width: 100%;
+}
+
+.controlWrapper {
+  display: inline-flex;
+  width: 100%;
+}
+
+.buttonWrapper {
+  line-height: 45px;
+}
+
+.sliderWrapper {
+  width: 100%;
+  padding-left: 10px;
+}
+
+.mat-slider-horizontal.cdk-focused .mat-slider-thumb-label {
+  transform: rotate(0deg) !important;
+  width: 75px !important;
+  border-radius: 4px !important;
+}
+
+.mat-slider-thumb-label-text {
+  transform: rotate(0deg) !important;
+}

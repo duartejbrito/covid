@@ -1,0 +1,9 @@
+{
+  "typescript.tsdk": "node_modules/typescript/lib",
+  "editor.formatOnPaste": true,
+  "editor.formatOnSave": true,
+  "html.format.indentInnerHtml": true,
+  "editor.codeActionsOnSave": {
+    "source.fixAll.tslint": true
+  }
+}

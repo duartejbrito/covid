@@ -1,0 +1,95 @@
+<h2>Dashboard</h2>
+
+<div fxLayout="row" fxLayout.md="column" style="height: 100%;">
+  <div fxFlex>
+    <div class="chart-container">
+      <canvas #chart baseChart *ngIf="loaded" [chartType]="'line'" [legend]="true" [datasets]="lineChartData" [labels]="lineChartLabels"
+        [options]="lineChartOptions">
+      </canvas>
+    </div>
+  </div>
+  <div fxFlex>
+    <mat-form-field>
+      <mat-label>Metric</mat-label>
+      <mat-select (selectionChange)="metricChange()" [(value)]="selectedMetric">
+        <mat-option [value]="'totalCases'">Evolution of cases</mat-option>
+        <mat-option [value]="'totalDeaths'">Evolution of deaths</mat-option>
+        <mat-option [value]="'totalCasesByPopulation'">Evolution of cases by Population</mat-option>
+      </mat-select>
+    </mat-form-field>
+
+    <mat-form-field floatLabel="always" appearance="none">
+      <mat-label>Date - {{lineChartLabels && lineChartLabels.length > 0 ? lineChartLabels[currentSliderValue].format('L') : ''}}</mat-label>
+      <div class="controlWrapper">
+        <div class="buttonWrapper">
+          <button mat-raised-button color="primary" (click)="playClick()">Play history!</button>
+        </div>
+        <div class="sliderWrapper">
+          <mat-slider tickInterval="auto" (change)="sliderChange($event)" min="0" [value]="currentSliderValue" [max]="maxSliderValue"
+            thumbLabel [displayWith]="formatSliderLabel(lineChartLabels)">
+          </mat-slider>
+        </div>
+      </div>
+      <textarea matInput hidden></textarea>
+    </mat-form-field>
+
+    <mat-form-field>
+      <mat-label>Filter</mat-label>
+      <input matInput (keyup)="applyFilter($event)" placeholder="Ex. Portugal">
+    </mat-form-field>
+
+    <div class="mat-elevation-z8">
+      <table mat-table [dataSource]="dataForTable" matSort matSortActive="totalCases" matSortDirection="desc" matSortStart="desc">
+        <ng-container matColumnDef="select">
+          <th mat-header-cell *matHeaderCellDef>
+            <mat-checkbox (change)="$event ? masterToggle() : null" [checked]="selection.hasValue() && isAllSelected()"
+              [indeterminate]="selection.hasValue() && !isAllSelected()" [aria-label]="checkboxLabel()">
+            </mat-checkbox>
+          </th>
+          <td mat-cell *matCellDef="let row">
+            <mat-checkbox (click)="$event.stopPropagation()" (change)="$event ? selection.toggle(row) : null"
+              [checked]="selection.isSelected(row)" [aria-label]="checkboxLabel(row)">
+            </mat-checkbox>
+          </td>
+        </ng-container>
+        <ng-container matColumnDef="flag">
+          <th mat-header-cell *matHeaderCellDef></th>
+          <td mat-cell *matCellDef="let element"><img class="countryFlag" src="{{element.flag}}"></td>
+        </ng-container>
+        <ng-container matColumnDef="location">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header> Location </th>
+          <td mat-cell *matCellDef="let element"> {{element.countryName}} </td>
+        </ng-container>
+        <ng-container matColumnDef="newCases">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header> New Cases </th>
+          <td mat-cell *matCellDef="let element"> {{element.newCases}} </td>
+        </ng-container>
+        <ng-container matColumnDef="newDeaths">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header> New Deaths </th>
+          <td mat-cell *matCellDef="let element"> {{element.newDeaths}} </td>
+        </ng-container>
+        <ng-container matColumnDef="totalCases">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header> Total Cases </th>
+          <td mat-cell *matCellDef="let element"> {{element.totalCases}} </td>
+        </ng-container>
+        <ng-container matColumnDef="totalDeaths">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header> Total Deaths </th>
+          <td mat-cell *matCellDef="let element"> {{element.totalDeaths}} </td>
+        </ng-container>
+        <ng-container matColumnDef="population">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header> Population </th>
+          <td mat-cell *matCellDef="let element"> {{element.population | shortNumber}} </td>
+        </ng-container>
+        <ng-container matColumnDef="totalCasesByPopulation">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header> Infected Population (%) </th>
+          <td mat-cell *matCellDef="let element"> {{element.totalCasesByPopulation | number:'1.3-3'}} </td>
+        </ng-container>
+
+        <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+        <tr mat-row *matRowDef="let row; columns: displayedColumns;" (click)="selection.toggle(row)"></tr>
+      </table>
+
+      <mat-paginator [pageSizeOptions]="[10, 20, 50]" showFirstLastButtons></mat-paginator>
+    </div>
+  </div>
+</div>
