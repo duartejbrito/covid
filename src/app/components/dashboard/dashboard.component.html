@@ -1,6 +1,6 @@
 <h2>Dashboard</h2>
 
-<div fxLayout="row" fxLayout.md="column" style="height: 100%;">
+<div fxLayout="row" fxLayout.md="column" fxLayout.sm="column" style="height: 100%;">
   <div fxFlex>
     <div class="chart-container">
       <canvas #chart baseChart *ngIf="loaded" [chartType]="'line'" [legend]="true" [datasets]="lineChartData" [labels]="lineChartLabels"
