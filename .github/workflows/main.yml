@@ -19,6 +19,11 @@ jobs:
           npm install -g @angular/cli
           npm install
           ng build --prod --base-href="/covid/"
+      - name: Replace keys
+        run: |
+          find dist/covid -name \index.html -exec sed -i "s/[YOUR_GTAG_MANAGER_ID]/$GTAG_MANAGER_ID/g" {} \
+        env:
+          GTAG_MANAGER_ID: ${{ secrets.GTAG_MANAGER_ID }}
       - name: Deploy
         uses: JamesIves/github-pages-deploy-action@releases/v2
         env:
