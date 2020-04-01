@@ -104,6 +104,7 @@ export class AppService {
       'United States Virgin Islands': 'Virgin Islands (U.S.)',
       Vatican: 'Holy See',
       Vietnam: 'Viet Nam',
+      'Mariana Islands': 'Northern Mariana Islands'
     };
 
     if (replaces[name]) {
