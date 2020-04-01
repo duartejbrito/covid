@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+
+  <head>
+    <meta charset="utf-8">
+    <title>COVID-19</title>
+    <base href="/covid/">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="icon" type="image/x-icon" href="favicon.ico">
+    <link href="https://fonts.googleapis.com/css?family=Roboto:300,400,500&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <!-- Global site tag (gtag.js) - Google Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-162024652-1"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag() { dataLayer.push(arguments); }
+      gtag('js', new Date());
+
+      gtag('config', 'UA-162024652-1');
+    </script>
+
+    <!-- Github Pages hack to allow SPA refresh without receiving 404. -->
+    <script>
+      (function () {
+        // Retrieve the URL the user was trying to access when receiving the 404.
+        var redirect = sessionStorage.redirect;
+        // Remove the URL from sessionStorage.
+        delete sessionStorage.redirect;
+        // Check if we actually need to redirect.
+        if (redirect && redirect != location.href) {
+          // We need to redirect to the URL the user was trying to access.
+          history.replaceState(null, null, redirect);
+        }
+      })();
+    </script>
+    <!-- /Github Pages hack. -->
+  <link rel="stylesheet" href="styles.297685f4326e8d703181.css"></head>
+
+  <body class="mat-typography">
+    <app-root></app-root>
+  <script src="runtime-es2015.0811dcefd377500b5b1a.js" type="module"></script><script src="runtime-es5.0811dcefd377500b5b1a.js" nomodule defer></script><script src="polyfills-es5.a8d201329e07c17fc665.js" nomodule defer></script><script src="polyfills-es2015.1f913f16a2d346cc8bdc.js" type="module"></script><script src="main-es2015.ff0442a0a649cfbeb8fd.js" type="module"></script><script src="main-es5.ff0442a0a649cfbeb8fd.js" nomodule defer></script></body>
+
+</html>
